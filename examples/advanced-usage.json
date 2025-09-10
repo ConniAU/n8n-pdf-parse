@@ -1,0 +1,110 @@
+{
+  "name": "PDF Parse - Advanced Usage",
+  "description": "Example workflow showing advanced PDF parsing with page ranges and metadata",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "parse",
+        "source": "binary",
+        "binaryPropertyName": "data",
+        "outputProperty": "pdfText",
+        "additionalOptions": {
+          "pageRangeStart": 1,
+          "pageRangeEnd": 5,
+          "normalizeWhitespace": true,
+          "includeMetadata": true,
+          "splitByPages": true
+        }
+      },
+      "id": "1",
+      "name": "PDF Parse Advanced",
+      "type": "n8n-nodes-pdf-parse.pdfParse",
+      "typeVersion": 1,
+      "position": [1080, 240]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://example.com/sample-document.pdf",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "2",
+      "name": "Fetch PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [640, 240]
+    },
+    {
+      "parameters": {
+        "operation": "split",
+        "fieldToSplit": "pdfText",
+        "include": "selectedOtherFields",
+        "fieldsToInclude": "numPages,pdfStats,pdfMetadata"
+      },
+      "id": "3",
+      "name": "Split Pages",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 3,
+      "position": [1300, 240]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.pdfText}}",
+              "operation": "contains",
+              "value2": "important keyword"
+            }
+          ]
+        }
+      },
+      "id": "4",
+      "name": "Filter Important Pages",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [1520, 240]
+    }
+  ],
+  "connections": {
+    "Fetch PDF": {
+      "main": [
+        [
+          {
+            "node": "PDF Parse Advanced",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PDF Parse Advanced": {
+      "main": [
+        [
+          {
+            "node": "Split Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Pages": {
+      "main": [
+        [
+          {
+            "node": "Filter Important Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

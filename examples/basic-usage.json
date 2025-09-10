@@ -1,0 +1,54 @@
+{
+  "name": "PDF Parse - Basic Usage",
+  "description": "Example workflow showing basic PDF parsing from URL",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "parse",
+        "source": "url",
+        "url": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        "outputProperty": "extractedText",
+        "additionalOptions": {
+          "normalizeWhitespace": true,
+          "includeMetadata": true
+        }
+      },
+      "id": "1",
+      "name": "PDF Parse",
+      "type": "n8n-nodes-pdf-parse.pdfParse",
+      "typeVersion": 1,
+      "position": [860, 240]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "2",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [640, 240]
+    }
+  ],
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "PDF Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

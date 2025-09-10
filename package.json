@@ -1,0 +1,54 @@
+{
+  "name": "n8n-nodes-pdf-parse",
+  "version": "1.0.0",
+  "description": "N8N community node for parsing PDF files to text with advanced configuration options",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "pdf",
+    "parse",
+    "text",
+    "document",
+    "extraction"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/yourusername/n8n-nodes-pdf-parse",
+  "author": {
+    "name": "Galway IT",
+    "email": "it@conni.com.au"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/n8n-nodes-pdf-parse.git"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [],
+    "nodes": [
+      "dist/nodes/PdfParse/PdfParse.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^18.17.0",
+    "n8n-workflow": "^1.82.0",
+    "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "pdf-parse": "^1.1.1"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
