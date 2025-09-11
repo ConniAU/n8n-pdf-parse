@@ -23,7 +23,7 @@ export class PdfParse implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'PDF Parse',
 		name: 'pdfParse',
-		icon: 'file:app_icon.png',
+		icon: 'file:pdf.svg',
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["source"]}}',
