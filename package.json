@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-pdf-parse",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "N8N community node for parsing PDF files to text with advanced configuration options",
   "keywords": [
     "n8n-community-node-package",
@@ -12,14 +12,14 @@
     "extraction"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/yourusername/n8n-nodes-pdf-parse",
+  "homepage": "https://github.com/ConniAU/n8n-pdf-parse",
   "author": {
     "name": "Galway IT",
     "email": "it@conni.com.au"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/n8n-nodes-pdf-parse.git"
+    "url": "git+https://github.com/ConniAU/n8n-pdf-parse.git"
   },
   "main": "dist/index.js",
   "scripts": {

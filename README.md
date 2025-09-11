@@ -81,7 +81,13 @@ N8N_NODES_EXCLUDE=[]
 - **Max Pages**: Maximum number of pages to parse (0 = all pages)
 - **Page Range Start**: Starting page number (1-based)
 - **Page Range End**: Ending page number (0 = last page)
-- **Normalize Whitespace**: Clean up whitespace in extracted text
+- **Text Formatting**: Choose formatting style:
+  - **Raw (Best for AI)**: Preserves all line breaks and document structure
+  - **Minimal Cleanup**: Removes extra spaces but keeps line breaks
+  - **Structured**: Cleans formatting while preserving structure
+  - **Compact**: Removes most whitespace for compact text
+- **Normalize Whitespace**: Legacy option - clean up whitespace in extracted text
+- **Preserve Line Breaks**: Keep line breaks for better document structure recognition
 - **Include Metadata**: Include PDF metadata in output
 - **Split by Pages**: Return text split by pages as an array
 - **Version**: PDF.js version to use for parsing
@@ -263,7 +269,7 @@ When "Continue on Fail" is enabled, errors are added to the output data:
 ### Setup
 
 ```bash
-git clone https://github.com/yourusername/n8n-nodes-pdf-parse.git
+git clone https://github.com/ConniAU/n8n-pdf-parse.git
 cd n8n-nodes-pdf-parse
 npm install
 ```
@@ -344,7 +350,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 For issues, questions, or contributions:
 
-- GitHub Issues: [https://github.com/yourusername/n8n-nodes-pdf-parse/issues](https://github.com/yourusername/n8n-nodes-pdf-parse/issues)
+- GitHub Issues: [https://github.com/ConniAU/n8n-pdf-parse/issues](https://github.com/ConniAU/n8n-pdf-parse/issues)
 - N8N Community: [https://community.n8n.io](https://community.n8n.io)
 
 ## Acknowledgments

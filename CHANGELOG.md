@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2025-09-11
+
+### Improved
+- **Enhanced Text Formatting Options**: Added new text formatting modes optimized for AI processing
+  - Raw mode now preserves all line breaks for better AI document recognition
+  - Added minimal, structured, and compact formatting options
+  - Default changed to "Raw" mode for optimal AI parsing
+- **Better Line Break Preservation**: Improved handling of line breaks to maintain document structure
+- **Intelligent Whitespace Handling**: More sophisticated whitespace normalization that preserves document layout
+
+### Fixed
+- Text parsing now properly preserves line breaks for AI to recognize document structure
+- Purchase orders, invoices, and structured documents now maintain their layout
+
 ## [1.0.0] - 2025-09-10
 
 ### Added
