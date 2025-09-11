@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2025-09-11
+
+### 🔧 **Critical Fix: Dependency-Free Image Conversion**
+- **Replaced pdf2pic with PDF.js + Canvas**: Eliminated external dependency requirements (GraphicsMagick, ImageMagick, Ghostscript)
+- **Zero External Dependencies**: Image conversion now works out-of-the-box without system-level installations
+- **Improved Reliability**: Direct PDF.js rendering eliminates "Command failed: execvp failed" errors
+- **Better Performance**: Native Node.js Canvas rendering with precise DPI and dimension control
+- **Enhanced Compatibility**: Works on all systems without additional binary dependencies
+
+### 🎯 **Technical Improvements**
+- **Self-Contained**: All image conversion handled internally with PDF.js and Node Canvas
+- **Memory Optimized**: Direct buffer processing without temporary files
+- **Cross-Platform**: Consistent behavior across Linux, macOS, and Windows
+- **Error Resilient**: Better error handling and debugging information
+
 ## [1.3.0] - 2025-09-11
 
 ### 🖼️ **PDF to Image Conversion**

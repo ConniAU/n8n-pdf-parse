@@ -5,7 +5,7 @@ A robust N8N community node for parsing PDF files and extracting text content wi
 ## Features
 
 - 🤖 **AI-Optimized Text Extraction**: Enhanced pdf-parse engine with superior AI-friendly formatting
-- 🖼️ **PDF to Image Conversion**: Convert PDF pages to PNG/JPEG with configurable quality and dimensions
+- 🖼️ **PDF to Image Conversion**: Dependency-free PDF to PNG/JPEG conversion with configurable quality and dimensions
 - ✅ **Raw Mode (Default)**: Preserves all line breaks and document structure for optimal AI processing
 - ✅ **Multiple Formatting Options**: Raw, Smart, Minimal, Structured, Visual, and Compact modes
 - ✅ **Perfect for Document Analysis**: Purchase orders, invoices, forms, and tables maintain layout
@@ -279,7 +279,11 @@ When "Continue on Fail" is enabled, errors are added to the output data:
 ## Dependencies
 
 - `pdf-parse`: Enhanced PDF parsing library with AI-optimized text extraction
+- `pdfjs-dist`: Mozilla's PDF.js library for reliable PDF processing
+- `canvas`: Node.js Canvas API for image generation (no external dependencies required)
 - `n8n-workflow`: N8N workflow types and utilities
+
+**No External Dependencies Required**: Unlike other PDF processing libraries, this node works out-of-the-box without requiring GraphicsMagick, ImageMagick, or Ghostscript installations.
 
 ## Development
 

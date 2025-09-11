@@ -18,7 +18,8 @@ import {
 } from 'n8n-workflow';
 
 import pdfParse from 'pdf-parse';
-import { fromBuffer } from 'pdf2pic';
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.js';
+import { createCanvas } from 'canvas';
 
 // Helper function for text formatting with improved layout detection
 function formatText(text: string, formatting: string): string {
@@ -510,101 +511,126 @@ export class PdfParse implements INodeType {
 
 				// Handle different operations
 				if (operation === 'convert') {
-					// Image conversion operation
+					// Image conversion operation using PDF.js + Canvas
 					const imageFormat = (additionalOptions.imageFormat as string) || 'png';
 					const dpi = (additionalOptions.dpi as number) || 150;
 					const width = additionalOptions.width as number;
 					const height = additionalOptions.height as number;
 					const preserveAspectRatio = additionalOptions.preserveAspectRatio !== false;
 
-					// Configure pdf2pic options
-					const convertOptions: any = {
-						density: dpi,
-						saveFilename: 'page',
-						savePath: '/tmp',
-						format: imageFormat,
-						width: width > 0 ? width : undefined,
-						height: height > 0 ? height : undefined,
-					};
-
 					// Handle page range for image conversion
 					const pageRangeStart = (additionalOptions.pageRangeStart as number) || 1;
 					const pageRangeEnd = additionalOptions.pageRangeEnd as number;
 					const maxPages = additionalOptions.maxPages as number;
 
-					// Create converter instance
-					const convert = fromBuffer(pdfBuffer, convertOptions);
-
 					try {
-						let convertResult;
+						// Load PDF with PDF.js
+						const loadingTask = pdfjs.getDocument({ data: pdfBuffer });
+						const pdf = await loadingTask.promise;
+
+						// Determine which pages to convert
+						const totalPages = pdf.numPages;
+						let startPage = pageRangeStart;
+						let endPage = pageRangeEnd || totalPages;
 						
-						if (!convert || !convert.bulk) {
-							throw new Error('PDF to image converter initialization failed');
+						if (maxPages && maxPages > 0) {
+							endPage = Math.min(startPage + maxPages - 1, totalPages);
 						}
 						
-						if (pageRangeEnd) {
-							// Convert specific page range - bulk convert then slice
-							const allPages = await convert.bulk(-1, true); // base64 = true
-							convertResult = allPages.slice(pageRangeStart - 1, pageRangeEnd);
-						} else if (maxPages && maxPages > 0) {
-							// Convert up to max pages
-							const allPages = await convert.bulk(-1, true); // base64 = true
-							convertResult = allPages.slice(pageRangeStart - 1, pageRangeStart - 1 + maxPages);
-						} else {
-							// Convert all pages starting from pageRangeStart
-							convertResult = await convert.bulk(-1, true); // base64 = true
-							if (pageRangeStart > 1) {
-								convertResult = convertResult.slice(pageRangeStart - 1);
-							}
-						}
+						endPage = Math.min(endPage, totalPages);
 
 						// Prepare output data for images
 						const outputData: IDataObject = {
 							...items[i].json,
 						};
 
-						// Handle multiple pages (convert.bulk always returns array)
-						if (Array.isArray(convertResult)) {
-							const images: IBinaryKeyData = {};
-							const imageInfo: any[] = [];
+						const images: IBinaryKeyData = {};
+						const imageInfo: any[] = [];
 
-							for (let pageIndex = 0; pageIndex < convertResult.length; pageIndex++) {
-								const page = convertResult[pageIndex];
-								const pageNum = pageRangeStart + pageIndex;
-								
-								// Check if page has base64 data
-								if (!(page as any).base64) {
-									throw new Error(`Page ${pageNum} conversion failed - no image data`);
+						// Convert each page
+						for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
+							const page = await pdf.getPage(pageNum);
+							const viewport = page.getViewport({ scale: dpi / 72 }); // Scale based on DPI
+
+							// Calculate dimensions
+							let canvasWidth = Math.floor(viewport.width);
+							let canvasHeight = Math.floor(viewport.height);
+
+							// Apply custom dimensions if specified
+							if (width > 0 || height > 0) {
+								if (width > 0 && height > 0) {
+									if (preserveAspectRatio) {
+										const aspectRatio = viewport.width / viewport.height;
+										if (width / height > aspectRatio) {
+											canvasWidth = Math.floor(height * aspectRatio);
+											canvasHeight = height;
+										} else {
+											canvasWidth = width;
+											canvasHeight = Math.floor(width / aspectRatio);
+										}
+									} else {
+										canvasWidth = width;
+										canvasHeight = height;
+									}
+								} else if (width > 0) {
+									const aspectRatio = viewport.width / viewport.height;
+									canvasWidth = width;
+									canvasHeight = Math.floor(width / aspectRatio);
+								} else if (height > 0) {
+									const aspectRatio = viewport.width / viewport.height;
+									canvasWidth = Math.floor(height * aspectRatio);
+									canvasHeight = height;
 								}
-								
-								const imageBuffer = Buffer.from((page as any).base64, 'base64');
-								
-								// Store as binary data
-								const binaryPropertyName = `image_page_${pageNum}`;
-								images[binaryPropertyName] = {
-									data: imageBuffer.toString('base64'),
-									mimeType: imageFormat === 'png' ? 'image/png' : 'image/jpeg',
-									fileName: `page_${pageNum}.${imageFormat}`,
-									fileExtension: imageFormat,
-								};
-
-								imageInfo.push({
-									page: pageNum,
-									width: (page as any).width || 0,
-									height: (page as any).height || 0,
-									size: imageBuffer.length,
-									format: imageFormat,
-									binaryProperty: binaryPropertyName,
-								});
 							}
 
-							outputData[outputProperty] = imageInfo;
-							
-							returnData.push({
-								json: outputData,
-								binary: images,
+							// Create canvas
+							const canvas = createCanvas(canvasWidth, canvasHeight);
+							const context = canvas.getContext('2d');
+
+							// Set white background for JPEG
+							if (imageFormat === 'jpeg') {
+								context.fillStyle = '#FFFFFF';
+								context.fillRect(0, 0, canvasWidth, canvasHeight);
+							}
+
+							// Render PDF page to canvas
+							const renderContext = {
+								canvasContext: context,
+								viewport: page.getViewport({ scale: canvasWidth / viewport.width }),
+							};
+
+							await page.render(renderContext).promise;
+
+							// Convert canvas to image buffer
+							const imageBuffer = imageFormat === 'png' 
+								? canvas.toBuffer('image/png')
+								: canvas.toBuffer('image/jpeg', { quality: 0.9 });
+
+							// Store as binary data
+							const binaryPropertyName = `image_page_${pageNum}`;
+							images[binaryPropertyName] = {
+								data: imageBuffer.toString('base64'),
+								mimeType: imageFormat === 'png' ? 'image/png' : 'image/jpeg',
+								fileName: `page_${pageNum}.${imageFormat}`,
+								fileExtension: imageFormat,
+							};
+
+							imageInfo.push({
+								page: pageNum,
+								width: canvasWidth,
+								height: canvasHeight,
+								size: imageBuffer.length,
+								format: imageFormat,
+								binaryProperty: binaryPropertyName,
 							});
 						}
+
+						outputData[outputProperty] = imageInfo;
+						
+						returnData.push({
+							json: outputData,
+							binary: images,
+						});
 
 					} catch (conversionError) {
 						throw new NodeOperationError(this.getNode(), 
