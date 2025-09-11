@@ -4,14 +4,16 @@ A robust N8N community node for parsing PDF files and extracting text content wi
 
 ## Features
 
-- ✅ Extract text from PDF files with high accuracy
-- ✅ Support for both binary data and URL sources
-- ✅ Advanced parsing options (page ranges, max pages, etc.)
-- ✅ Metadata extraction
-- ✅ Text normalization and cleanup
-- ✅ Page-by-page text splitting
-- ✅ Comprehensive error handling
-- ✅ Built with TypeScript for type safety
+- 🤖 **AI-Optimized Text Extraction**: Enhanced pdf-parse engine with superior AI-friendly formatting
+- ✅ **Raw Mode (Default)**: Preserves all line breaks and document structure for optimal AI processing
+- ✅ **Multiple Formatting Options**: Raw, Smart, Minimal, Structured, and Compact modes
+- ✅ **Perfect for Document Analysis**: Purchase orders, invoices, forms, and tables maintain layout
+- ✅ **Enhanced Line Break Preservation**: Keeps document structure intact for LLM processing
+- ✅ **Multiple Input Sources**: Binary data and URL sources
+- ✅ **Advanced Parsing Options**: Page ranges, max pages, metadata extraction
+- ✅ **Comprehensive Statistics**: Text length, word count, page information
+- ✅ **Robust Error Handling**: Detailed validation and graceful failure handling
+- ✅ **TypeScript**: Full type safety and IntelliSense support
 
 ## Installation
 
@@ -261,7 +263,7 @@ When "Continue on Fail" is enabled, errors are added to the output data:
 
 ## Dependencies
 
-- `pdf-parse`: High-quality PDF parsing library
+- `pdf-parse`: Enhanced PDF parsing library with AI-optimized text extraction
 - `n8n-workflow`: N8N workflow types and utilities
 
 ## Development

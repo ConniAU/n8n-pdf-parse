@@ -1,9 +1,9 @@
 /**
  * @file PdfParse.node.ts
- * @description N8N node for parsing PDF files to text with advanced configuration options
+ * @description N8N node for parsing PDF files to text with enhanced AI-friendly formatting
  * @author AI Assistant
- * @date 2025-09-10
- * @modified 2025-09-10
+ * @date 2025-09-11
+ * @modified 2025-09-11
  */
 
 import {
@@ -19,6 +19,49 @@ import {
 
 import pdfParse from 'pdf-parse';
 
+// Helper function for text formatting
+function formatText(text: string, formatting: string): string {
+	switch (formatting) {
+		case 'raw':
+			// Keep original formatting - best for AI processing
+			return text.replace(/\r\n/g, '\n');
+		
+		case 'smart':
+			// Smart layout preservation - default
+			return text
+				.replace(/\r\n/g, '\n') // Normalize line endings
+				.replace(/([.!?])\s*\n/g, '$1\n\n') // Add paragraph breaks after sentences
+				.replace(/\n{4,}/g, '\n\n\n') // Limit excessive line breaks
+				.replace(/^\s+|\s+$/gm, ''); // Trim each line
+		
+		case 'minimal':
+			// Remove extra spaces but preserve all line breaks
+			return text
+				.replace(/\r\n/g, '\n')
+				.replace(/[ \t]+/g, ' ')
+				.replace(/^\s+|\s+$/gm, '');
+		
+		case 'structured':
+			// Clean formatting while preserving document structure
+			return text
+				.replace(/\r\n/g, '\n')
+				.replace(/[ \t]+/g, ' ')
+				.replace(/\n{3,}/g, '\n\n')
+				.replace(/^\s+|\s+$/gm, '')
+				.trim();
+		
+		case 'compact':
+			// Remove most whitespace for compact text
+			return text
+				.replace(/\s+/g, ' ')
+				.replace(/\n\s*\n/g, '\n')
+				.trim();
+		
+		default:
+			return text;
+	}
+}
+
 export class PdfParse implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'PDF Parse',
@@ -27,7 +70,7 @@ export class PdfParse implements INodeType {
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["source"]}}',
-		description: 'Parse PDF files and extract text content with advanced options',
+		description: 'Parse PDF files and extract text content with enhanced AI-friendly formatting',
 		defaults: {
 			name: 'PDF Parse',
 		},
@@ -139,20 +182,6 @@ export class PdfParse implements INodeType {
 						},
 					},
 					{
-						displayName: 'Normalize Whitespace',
-						name: 'normalizeWhitespace',
-						type: 'boolean',
-						default: false,
-						description: 'Whether to normalize whitespace (preserves line breaks for better AI parsing when false)',
-					},
-					{
-						displayName: 'Preserve Line Breaks',
-						name: 'preserveLineBreaks',
-						type: 'boolean',
-						default: true,
-						description: 'Whether to preserve line breaks for better document structure recognition',
-					},
-					{
 						displayName: 'Text Formatting',
 						name: 'textFormatting',
 						type: 'options',
@@ -160,7 +189,12 @@ export class PdfParse implements INodeType {
 							{
 								name: 'Raw (Best for AI)',
 								value: 'raw',
-								description: 'Keep original formatting with all line breaks',
+								description: 'Keep original formatting with all line breaks and spaces',
+							},
+							{
+								name: 'Smart Layout',
+								value: 'smart',
+								description: 'Intelligent layout preservation with enhanced spacing',
 							},
 							{
 								name: 'Minimal Cleanup',
@@ -227,7 +261,7 @@ export class PdfParse implements INodeType {
 					pdfBuffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
 				} else if (source === 'url') {
 					const url = this.getNodeParameter('url', i) as string;
-
+					
 					if (!url) {
 						throw new NodeOperationError(this.getNode(), 'URL is required when source is set to URL', {
 							itemIndex: i,
@@ -287,7 +321,7 @@ export class PdfParse implements INodeType {
 				if (additionalOptions.pageRangeStart || additionalOptions.pageRangeEnd) {
 					const start = (additionalOptions.pageRangeStart as number) || 1;
 					const end = additionalOptions.pageRangeEnd as number;
-
+					
 					parseOptions.pagerender = (pageData: any) => {
 						const pageNum = pageData.pageIndex + 1;
 						if (pageNum < start) return null;
@@ -300,7 +334,7 @@ export class PdfParse implements INodeType {
 				if (additionalOptions.maxPages && (additionalOptions.maxPages as number) > 0) {
 					const maxPages = additionalOptions.maxPages as number;
 					let pageCount = 0;
-
+					
 					parseOptions.pagerender = (pageData: any) => {
 						pageCount++;
 						if (pageCount > maxPages) return null;
@@ -314,49 +348,8 @@ export class PdfParse implements INodeType {
 				let extractedText = pdfData.text;
 
 				// Apply text formatting based on user preference
-				const textFormatting = additionalOptions.textFormatting || 'raw';
-
-				switch (textFormatting) {
-					case 'raw':
-						// Keep original formatting - best for AI processing
-						// Only normalize line endings for consistency
-						extractedText = extractedText.replace(/\r\n/g, '\n');
-						break;
-
-					case 'minimal':
-						// Remove extra spaces but preserve all line breaks
-						extractedText = extractedText
-							.replace(/\r\n/g, '\n') // Normalize line endings
-							.replace(/[ \t]+/g, ' ') // Replace multiple spaces/tabs with single space
-							.replace(/^\s+|\s+$/gm, ''); // Trim each line
-						break;
-
-					case 'structured':
-						// Clean formatting while preserving document structure
-						extractedText = extractedText
-							.replace(/\r\n/g, '\n') // Normalize line endings
-							.replace(/[ \t]+/g, ' ') // Replace multiple spaces/tabs with single space
-							.replace(/\n{3,}/g, '\n\n') // Replace 3+ newlines with double newline
-							.replace(/^\s+|\s+$/gm, '') // Trim each line
-							.trim();
-						break;
-
-					case 'compact':
-						// Remove most whitespace for compact text
-						extractedText = extractedText
-							.replace(/\s+/g, ' ') // Replace all whitespace with single space
-							.replace(/\n\s*\n/g, '\n') // Reduce multiple newlines to single
-							.trim();
-						break;
-				}
-
-				// Legacy option support - normalize whitespace overrides formatting if true
-				if (additionalOptions.normalizeWhitespace === true) {
-					extractedText = extractedText
-						.replace(/\s+/g, ' ')
-						.replace(/\n\s*\n/g, '\n')
-						.trim();
-				}
+				const textFormatting = (additionalOptions.textFormatting as string) || 'raw';
+				extractedText = formatText(extractedText, textFormatting);
 
 				// Prepare output data
 				const outputData: IDataObject = {

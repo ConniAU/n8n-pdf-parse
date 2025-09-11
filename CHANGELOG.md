@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-09-11
+
+### 🚀 **Enhanced AI-Optimized PDF Parsing** 
+- **Improved Text Formatting**: Enhanced the existing pdf-parse engine with better AI-friendly formatting
+- **Better Line Break Preservation**: Raw mode now preserves all line breaks for superior AI document understanding
+- **Enhanced Document Structure Recognition**: Purchase orders, invoices, and forms maintain proper layout
+
+### 🆕 **New Features**
+- **Raw Mode (Default)**: Preserves all original formatting for optimal AI processing
+- **Smart Layout Mode**: Intelligent text spacing and paragraph detection
+- **Enhanced Formatting Options**: 5 distinct formatting modes for different use cases
+- **Better Error Handling**: More detailed error messages and validation
+
+### 🔧 **Improved**
+- **AI-Optimized Output**: Default "Raw" mode maintains document structure for AI understanding
+- **Purchase Order Recognition**: Your PO example will now preserve line breaks properly
+- **Table and Form Support**: Better handling of structured documents
+- **Flexible Formatting**: Choose between raw, smart, minimal, structured, or compact modes
+
+### 🛠 **Technical Improvements**
+- Enhanced pdf-parse with intelligent text processing
+- Improved TypeScript type definitions
+- Better error handling and validation
+- Optimized for AI/LLM document processing workflows
+
 ## [1.0.1] - 2025-09-11
 
 ### Improved

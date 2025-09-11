@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-pdf-parse",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "N8N community node for parsing PDF files to text with advanced configuration options",
   "keywords": [
     "n8n-community-node-package",
@@ -43,6 +43,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
+    "pdf2pic": "^2.1.4",
     "pdf-parse": "^1.1.1"
   },
   "peerDependencies": {
