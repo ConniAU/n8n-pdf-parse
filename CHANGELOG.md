@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-09-11
+
+### 🧠 **Revolutionary Whitespace-Intelligent Parser**
+- **Advanced Layout Analysis**: Multi-phase whitespace interpretation that distinguishes between column boundaries (large gaps) vs formatting (small gaps)
+- **Logical Grouping Preservation**: Keeps related content together instead of over-breaking into separate lines
+- **Context-Aware Breaking**: Smart colon handling that only breaks for major sections, not simple label:value pairs
+- **Conservative Approach**: Avoids excessive line breaking while maintaining document structure
+
+### 🎯 **Key Improvements Over Previous Versions**
+- **Whitespace Intelligence**: 8+ spaces = column breaks, 5-7 = sections, 3-4 = preserved spacing, 2 = intentional formatting
+- **Contact Block Preservation**: Addresses, phone numbers, emails kept in logical groupings
+- **Better List Handling**: Line items and numbered content preserved as coherent blocks
+- **Reduced Over-Breaking**: Eliminates unnecessary separation of related information
+
+### 🔧 **Technical Enhancements**
+- **Phase-Based Processing**: 8-phase analysis for optimal text structure preservation
+- **Pattern Recognition**: Distinguishes between structural vs decorative whitespace
+- **Content-Agnostic**: Works with any document type without hardcoded assumptions
+
 ## [1.1.1] - 2025-09-11
 
 ### 🚀 **Universal Document Layout Recognition**

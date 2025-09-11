@@ -69,82 +69,76 @@ function formatText(text: string, formatting: string): string {
 				.trim();
 
 		case 'visual':
-			// Universal visual layout mode - mimics human text selection behavior
-			return text
-				.replace(/\r\n/g, '\n')
-
-				// 1. FUNDAMENTAL LAYOUT PATTERNS
-				// Preserve spacing around punctuation that indicates structure
-				.replace(/([.!?])\s*([A-Z])/g, '$1\n\n$2') // Sentence breaks with capitals
-				.replace(/(:)\s*([A-Z])/g, '$1\n$2') // Colon followed by capitals (labels)
-
-				// 2. WHITESPACE INTERPRETATION
-				// Multiple spaces often indicate column separation in visual layout
-				.replace(/(\S)\s{3,}(\S)/g, '$1\n$2') // 3+ spaces = new line
-				.replace(/(\S)\s{2}(\S)/g, '$1  $2') // Preserve 2 spaces as intentional spacing
-
-				// 3. CAPITALIZATION PATTERNS
-				// All caps sections often represent headers or important sections
-				.replace(/([a-z])\s*([A-Z]{3,}(?:\s+[A-Z]+)*)/g, '$1\n\n$2') // Transition to all caps
-				.replace(/([A-Z]{3,}(?:\s+[A-Z]+)*)\s*([a-z])/g, '$1\n\n$2') // Transition from all caps
-
-				// 4. COMMON SEPARATORS AND DELIMITERS
-				// Colons often separate labels from values
-				.replace(/([^:\n]+:)\s*([^\n]+)/g, '$1\n$2')
-				// Dashes and underscores used as separators
-				.replace(/[-_]{3,}/g, '\n$&\n') // Lines of dashes/underscores
-
-				// 5. NUMERICAL PATTERNS
-				// Numbers at start of line often indicate lists or items
-				.replace(/([^\n])\s*(\d+\.?\s)/g, '$1\n$2') // Number lists
-				.replace(/([^\n])\s*([a-z]\.\s)/gi, '$1\n$2') // Letter lists
-
-				// 6. PARENTHESES AND BRACKETS
-				// Often contain supplementary info that should be separated
-				.replace(/([^\s])\s*(\([^)]+\))/g, '$1\n$2')
-				.replace(/([^\s])\s*(\[[^\]]+\])/g, '$1\n$2')
-
-				// 7. CONTACT INFORMATION PATTERNS (universal)
-				// Email addresses (any domain)
-				.replace(/(\S+@\S+\.\S+)/g, '\n$1')
-				// URLs and websites (any format)
-				.replace(/((?:https?:\/\/|www\.)\S+)/g, '\n$1')
-				// Phone number patterns (international)
-				.replace(/(\+?\d{1,4}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9})/g, '\n$1')
-
-				// 8. ADDRESS AND LOCATION PATTERNS
-				// Postal/ZIP codes (various international formats)
-				.replace(/(\b\d{3,5}[-\s]?\d{0,4}\b)/g, ' $1') // Keep postal codes with context
-				// Common address indicators
-				.replace(/(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd)\s/gi, '$1\n')
-
-				// 9. DATE AND TIME PATTERNS
-				// Various date formats
-				.replace(/(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4})/g, '\n$1')
-				.replace(/(\d{4}[-\/\.]\d{1,2}[-\/\.]\d{1,2})/g, '\n$1')
-				// Time patterns
-				.replace(/(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[APap][Mm])?)/g, '\n$1')
-
-				// 10. CURRENCY AND FINANCIAL (universal)
-				// Any currency symbol followed by numbers
-				.replace(/([\$€£¥₹₽¢₩₪₫₦₨₱₡₴₼][\d,]+\.?\d*)/g, '\n$1')
-				// Percentage values
-				.replace(/(\d+\.?\d*%)/g, ' $1')
-
-				// 11. WORD BOUNDARY FIXES
-				// Fix common PDF parsing artifacts where words run together
-				.replace(/([a-z])([A-Z])/g, '$1 $2') // camelCase
-				.replace(/(\d)([A-Za-z])/g, '$1 $2') // number+letter
-				.replace(/([A-Za-z])(\d)/g, '$1 $2') // letter+number
-				.replace(/([.,;])([A-Za-z])/g, '$1 $2') // punctuation+letter
-
-				// 12. STRUCTURAL CLEANUP
-				// Consolidate excessive whitespace while preserving intentional breaks
-				.replace(/\n{4,}/g, '\n\n\n') // Max 3 consecutive line breaks
-				.replace(/[ \t]+/g, ' ') // Consolidate spaces and tabs
-				.replace(/^\s+|\s+$/gm, '') // Trim each line
-				.replace(/\n\s*\n\s*\n/g, '\n\n') // Clean up spaced empty lines
+			// Advanced whitespace-based visual layout preservation
+			let result = text.replace(/\r\n/g, '\n');
+			
+			// PHASE 1: Fix common PDF parsing artifacts
+			result = result
+				.replace(/([a-z])([A-Z])/g, '$1 $2') // camelCase -> camel Case
+				.replace(/(\d)([A-Za-z])/g, '$1 $2') // 5EA -> 5 EA
+				.replace(/([A-Za-z])(\d)/g, '$1 $2') // BOX5 -> BOX 5
+				.replace(/([.,;:])([A-Za-z])/g, '$1 $2'); // punctuation+letter
+			
+			// PHASE 2: Intelligent whitespace interpretation
+			// The key insight: larger gaps = column boundaries, smaller gaps = formatting
+			result = result
+				// Very large gaps (8+ spaces) = clear column separation
+				.replace(/(\S)\s{8,}(\S)/g, '$1\n$2')
+				// Large gaps (5-7 spaces) = likely new logical section
+				.replace(/(\S)\s{5,7}(\S)/g, '$1\n$2')
+				// Medium gaps (3-4 spaces) = preserve as spacing within content
+				.replace(/(\S)\s{3,4}(\S)/g, '$1   $2')
+				// Small gaps (2 spaces) = intentional formatting, keep as is
+				.replace(/(\S)\s{2}(\S)/g, '$1  $2');
+			
+			// PHASE 3: Smart colon handling - don't over-break related content
+			result = result
+				// Only break after colons for substantial new content or major sections
+				.replace(/([^:\n]{3,}:)\s*([A-Z][A-Z\s]{10,})/g, '$1\n$2') // Major headers after colons
+				.replace(/([^:\n]{3,}:)\s*([^:\n]{20,})/g, '$1\n$2') // Long content after colons
+				// Keep simple label:value pairs together
+				.replace(/([^:\n]{2,8}:)\s*([^:\n]{1,15}(?:\s|$))/g, '$1 $2');
+			
+			// PHASE 4: Preserve contact and address blocks
+			result = result
+				// Keep structured contact info together but separate from other content
+				.replace(/(\w)\s+(\(?\d{2,4}\)?\s?\d{3,4}[\s-]?\d{3,4})/g, '$1\n$2') // Phone numbers
+				.replace(/(\w)\s+(\S+@\S+\.\S+)/g, '$1\n$2') // Email addresses
+				.replace(/(\w)\s+((?:https?:\/\/|www\.)\S+)/g, '$1\n$2'); // Web addresses
+			
+			// PHASE 5: Handle lists and numbered items
+			result = result
+				// Line items starting with numbers (but don't over-break)
+				.replace(/([^\n\d])\s+(\d+\s+[A-Z])/g, '$1\n$2')
+				// Currency amounts - only break if clearly separate context
+				.replace(/([A-Za-z])\s+([\$€£¥₹₽¢₩₪₫₦₨₱₡₴₼][\d,]+\.?\d*)/g, '$1\n$2');
+			
+			// PHASE 6: Major section headers (conservative approach)
+			result = result
+				// Only break for clear ALL CAPS headers (4+ chars each word)
+				.replace(/([a-z])\s+([A-Z]{4,}(?:\s+[A-Z]{4,})*(?:\s+[A-Z]{2,})*)/g, '$1\n\n$2')
+				.replace(/([A-Z]{4,}(?:\s+[A-Z]{4,})*)\s+([a-z]{3,})/g, '$1\n\n$2');
+			
+			// PHASE 7: Sentence boundaries (but be conservative)
+			result = result
+				// Clear sentence breaks (period + capital + substantial word)
+				.replace(/([.!?])\s+([A-Z][a-z]{4,})/g, '$1\n$2')
+				// Visual separator lines
+				.replace(/[-_=]{4,}/g, '\n$&\n');
+			
+			// PHASE 8: Final cleanup while preserving structure
+			result = result
+				// Limit excessive line breaks
+				.replace(/\n{4,}/g, '\n\n\n')
+				// Normalize spacing
+				.replace(/[ \t]+/g, ' ')
+				// Clean line ends
+				.replace(/^\s+|\s+$/gm, '')
+				// Remove unnecessary empty lines
+				.replace(/\n\s*\n\s*\n/g, '\n\n')
 				.trim();
+				
+			return result;
 
 		case 'minimal':
 			// Remove extra spaces but preserve all line breaks
