@@ -81,20 +81,33 @@ N8N_NODES_EXCLUDE=[]
 
 #### Optional Parameters
 
-- **Output Property Name**: Property name to store extracted text (default: "text")
-- **Max Pages**: Maximum number of pages to parse (0 = all pages)
+- **Output Property Name**: Property name to store the result (default: "result")
+- **Max Pages**: Maximum number of pages to process (0 = all pages)
 - **Page Range Start**: Starting page number (1-based)
 - **Page Range End**: Ending page number (0 = last page)
+
+#### Text Parsing Options (Parse PDF Operation)
 - **Text Formatting**: Choose formatting style:
   - **Raw (Best for AI)**: Preserves all line breaks and document structure
+  - **Smart Layout**: Intelligent layout preservation with enhanced spacing
+  - **Visual Layout**: Universal layout preservation - replicates human text selection patterns
   - **Minimal Cleanup**: Removes extra spaces but keeps line breaks
   - **Structured**: Cleans formatting while preserving structure
   - **Compact**: Removes most whitespace for compact text
-- **Normalize Whitespace**: Legacy option - clean up whitespace in extracted text
-- **Preserve Line Breaks**: Keep line breaks for better document structure recognition
 - **Include Metadata**: Include PDF metadata in output
 - **Split by Pages**: Return text split by pages as an array
 - **Version**: PDF.js version to use for parsing
+
+#### Image Conversion Options (Convert to Image Operation)
+- **Image Format**: Choose between PNG or JPEG output
+  - **PNG**: Better quality, transparency support, larger files
+  - **JPEG**: Smaller files, no transparency, good for photos
+- **DPI (Resolution)**: 72-600 dots per inch (default: 150)
+  - Higher DPI = better quality but larger files
+  - 72 DPI = screen resolution, 300 DPI = print quality
+- **Width**: Custom width in pixels (0 = auto based on DPI)
+- **Height**: Custom height in pixels (0 = auto based on DPI) 
+- **Preserve Aspect Ratio**: Maintain original proportions when resizing (default: true)
 
 ### Example Workflows
 
