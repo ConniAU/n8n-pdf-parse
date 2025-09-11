@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-09-11
+
+### 🚀 **Latest PDF.js Version Update**
+- **Updated PDF.js to v5.4.149**: Latest version for optimal compatibility and performance
+- **Enhanced Render Context**: Updated render parameters for PDF.js v5.4.149 API compatibility
+- **Worker-Free Operation**: Configured `GlobalWorkerOptions.workerSrc = false` for Node.js environment
+- **Zero Version Conflicts**: Eliminates "API version does not match Worker version" errors
+
+### 🔧 **Technical Improvements**
+- **Latest PDF.js API**: Upgraded to most recent v5.4.149 from GitHub releases
+- **Render Context Fix**: Added required `canvas` property to render parameters
+- **Modern Architecture**: Aligned with latest PDF.js API standards
+- **Future-Proof**: Using the most current PDF.js version available
+
+### 📋 **Compatibility Notes**
+- **PDF.js Version**: v5.4.149 (latest as of September 2025)
+- **N8N Compatibility**: Fully compatible with N8N v1.110.1 and newer
+- **Worker Independence**: All PDF processing in main thread for stability
+- **Performance**: Maintained image conversion performance with latest optimizations
+
 ## [1.3.3] - 2025-09-11
 
 ### 🔧 **Critical Fix: PDF.js Data Type Compatibility**

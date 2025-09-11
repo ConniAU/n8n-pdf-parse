@@ -279,7 +279,7 @@ When "Continue on Fail" is enabled, errors are added to the output data:
 ## Dependencies
 
 - `pdf-parse`: Enhanced PDF parsing library with AI-optimized text extraction
-- `pdfjs-dist`: Mozilla's PDF.js library for reliable PDF processing and image generation
+- `pdfjs-dist`: Mozilla's PDF.js library v5.4.149 for reliable PDF processing and image generation
 - `n8n-workflow`: N8N workflow types and utilities
 
 **Zero Native Dependencies**: Unlike other PDF processing libraries, this node is 100% pure JavaScript with no native modules, binary compilation, or external system dependencies. Works instantly on all platforms without Canvas native modules, GraphicsMagick, ImageMagick, or Ghostscript.

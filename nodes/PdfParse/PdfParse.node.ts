@@ -18,7 +18,10 @@ import {
 } from 'n8n-workflow';
 
 import pdfParse from 'pdf-parse';
-import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.js';
+import * as pdfjs from 'pdfjs-dist';
+
+// Configure PDF.js to not use workers in Node.js environment
+(pdfjs.GlobalWorkerOptions as any).workerSrc = false;
 
 // Define ImageData interface for Node.js environment
 interface ImageData {
@@ -776,6 +779,7 @@ export class PdfParse implements INodeType {
 							// Render PDF page to virtual canvas
 							const renderContext = {
 								canvasContext: context,
+								canvas: canvas,
 								viewport: page.getViewport({ scale: canvasWidth / viewport.width }),
 							};
 
