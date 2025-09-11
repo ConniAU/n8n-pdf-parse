@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.3] - 2025-09-11
+
+### 🔧 **Critical Fix: PDF.js Data Type Compatibility**
+- **Fixed Buffer to Uint8Array Conversion**: Resolved "Please provide binary data as Uint8Array, rather than Buffer" error
+- **Automatic Data Type Handling**: PDF data is now automatically converted from Node.js Buffer to Uint8Array for PDF.js compatibility
+- **Seamless Integration**: No user intervention required - conversion happens transparently
+- **Enhanced Reliability**: Eliminates PDF.js data type mismatches in image conversion
+
+### 📋 **Technical Details**
+- **Root Cause**: PDF.js expects Uint8Array data format, but N8N provides Buffer objects
+- **Solution**: Automatic conversion using `new Uint8Array(pdfBuffer)` before PDF.js processing
+- **Impact**: Image conversion now works without manual data type conversion
+- **Performance**: Zero overhead conversion using efficient typed array constructor
+
 ## [1.3.2] - 2025-09-11
 
 ### 🎯 **Zero Native Dependencies - Production Ready**

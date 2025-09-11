@@ -697,8 +697,11 @@ export class PdfParse implements INodeType {
 					const maxPages = additionalOptions.maxPages as number;
 
 					try {
+						// Convert Buffer to Uint8Array for PDF.js compatibility
+						const pdfData = new Uint8Array(pdfBuffer);
+						
 						// Load PDF with PDF.js
-						const loadingTask = pdfjs.getDocument({ data: pdfBuffer });
+						const loadingTask = pdfjs.getDocument({ data: pdfData });
 						const pdf = await loadingTask.promise;
 
 						// Determine which pages to convert
