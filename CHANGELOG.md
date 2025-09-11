@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-09-11
+
+### 🚀 **Universal Document Layout Recognition**
+- **New Visual Layout Mode**: Adaptive formatting that works with any document type - invoices, contracts, reports, statements
+- **Intelligent Pattern Detection**: Automatically recognizes headers, contact info, financial data, dates, and table structures
+- **Enhanced AI Processing**: Visual mode mimics manual text selection for superior AI understanding across document types
+- **Universal Field Recognition**: Supports multiple currencies, date formats, postal codes, and business document patterns
+
+### 🔧 **Improved Formatting Intelligence**
+- **Multi-Language Support**: Handles various international formats (US, UK, AU postal codes, multiple currencies)
+- **Adaptive Structure Preservation**: Maintains document hierarchy regardless of layout complexity
+- **Better Word Separation**: Fixes run-together words that commonly occur in PDF parsing
+- **Context-Aware Spacing**: Preserves logical document flow for optimal AI processing
+
 ## [1.1.0] - 2025-09-11
 
 ### 🚀 **Enhanced AI-Optimized PDF Parsing** 
@@ -15,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🆕 **New Features**
 - **Raw Mode (Default)**: Preserves all original formatting for optimal AI processing
 - **Smart Layout Mode**: Intelligent text spacing and paragraph detection
-- **Enhanced Formatting Options**: 5 distinct formatting modes for different use cases
+- **Enhanced Formatting Options**: 6 distinct formatting modes for different use cases
 - **Better Error Handling**: More detailed error messages and validation
 
 ### 🔧 **Improved**

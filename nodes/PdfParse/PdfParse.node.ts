@@ -19,44 +19,147 @@ import {
 
 import pdfParse from 'pdf-parse';
 
-// Helper function for text formatting
+// Helper function for text formatting with improved layout detection
 function formatText(text: string, formatting: string): string {
 	switch (formatting) {
 		case 'raw':
 			// Keep original formatting - best for AI processing
 			return text.replace(/\r\n/g, '\n');
-		
+
 		case 'smart':
-			// Smart layout preservation - default
+			// Smart layout preservation with better spacing detection
 			return text
 				.replace(/\r\n/g, '\n') // Normalize line endings
+				// Fix common PDF parsing issues where words run together
+				.replace(/([a-z])([A-Z])/g, '$1 $2') // Add space between camelCase
+				.replace(/(\d)([A-Za-z])/g, '$1 $2') // Add space between number and letter
+				.replace(/([A-Za-z])(\d)/g, '$1 $2') // Add space between letter and number
 				.replace(/([.!?])\s*\n/g, '$1\n\n') // Add paragraph breaks after sentences
 				.replace(/\n{4,}/g, '\n\n\n') // Limit excessive line breaks
-				.replace(/^\s+|\s+$/gm, ''); // Trim each line
-		
+				.replace(/^\s+|\s+$/gm, '') // Trim each line
+				// Improve specific purchase order formatting
+				.replace(/PURCHASEORDERNO:/g, 'PURCHASE ORDER NO:')
+				.replace(/([A-Z]{2,})\s*([A-Z]{2,})/g, '$1\n$2') // Split consecutive caps groups
+				.replace(/(\d{2}\/\d{2}\/\d{4})/g, '\n$1') // Put dates on new lines
+				.replace(/(IMPORTANT:)/g, '\n$1'); // Put important notices on new lines
+
+		case 'structured':
+			// Enhanced structured formatting for purchase orders and forms
+			return text
+				.replace(/\r\n/g, '\n')
+				// Add spaces for run-together words
+				.replace(/([a-z])([A-Z])/g, '$1 $2')
+				.replace(/(\d)([A-Za-z])/g, '$1 $2')
+				.replace(/([A-Za-z])(\d)/g, '$1 $2')
+				// Better structure for addresses and contact info
+				.replace(/(GPOBox\d+)/g, 'GPO Box $1')
+				.replace(/([A-Z]{2,}\s[A-Z]{2,}\s\d+)/g, '\n$1') // State/postcode patterns
+				.replace(/(www\.[^\s]+)/g, '\n$1') // Web addresses on new lines
+				.replace(/([^\s]+@[^\s]+)/g, '\n$1') // Email addresses on new lines  
+				.replace(/(\(\d{2}\)\s\d{4}\s\d{3,4})/g, '\n$1') // Phone numbers on new lines
+				// Purchase order specific formatting
+				.replace(/PURCHASEORDERNO:/g, 'PURCHASE ORDER NO:')
+				.replace(/(GOODS OR SERVICE REQUIRED)/g, '\n\n$1\n')
+				.replace(/(Total Order Value)/g, '\n$1')
+				.replace(/(IMPORTANT:)/g, '\n\n$1')
+				// Clean up extra spaces and line breaks
+				.replace(/[ \t]+/g, ' ')
+				.replace(/\n{3,}/g, '\n\n')
+				.replace(/^\s+|\s+$/gm, '')
+				.trim();
+
+		case 'visual':
+			// Universal visual layout mode - mimics human text selection behavior
+			return text
+				.replace(/\r\n/g, '\n')
+
+				// 1. FUNDAMENTAL LAYOUT PATTERNS
+				// Preserve spacing around punctuation that indicates structure
+				.replace(/([.!?])\s*([A-Z])/g, '$1\n\n$2') // Sentence breaks with capitals
+				.replace(/(:)\s*([A-Z])/g, '$1\n$2') // Colon followed by capitals (labels)
+
+				// 2. WHITESPACE INTERPRETATION
+				// Multiple spaces often indicate column separation in visual layout
+				.replace(/(\S)\s{3,}(\S)/g, '$1\n$2') // 3+ spaces = new line
+				.replace(/(\S)\s{2}(\S)/g, '$1  $2') // Preserve 2 spaces as intentional spacing
+
+				// 3. CAPITALIZATION PATTERNS
+				// All caps sections often represent headers or important sections
+				.replace(/([a-z])\s*([A-Z]{3,}(?:\s+[A-Z]+)*)/g, '$1\n\n$2') // Transition to all caps
+				.replace(/([A-Z]{3,}(?:\s+[A-Z]+)*)\s*([a-z])/g, '$1\n\n$2') // Transition from all caps
+
+				// 4. COMMON SEPARATORS AND DELIMITERS
+				// Colons often separate labels from values
+				.replace(/([^:\n]+:)\s*([^\n]+)/g, '$1\n$2')
+				// Dashes and underscores used as separators
+				.replace(/[-_]{3,}/g, '\n$&\n') // Lines of dashes/underscores
+
+				// 5. NUMERICAL PATTERNS
+				// Numbers at start of line often indicate lists or items
+				.replace(/([^\n])\s*(\d+\.?\s)/g, '$1\n$2') // Number lists
+				.replace(/([^\n])\s*([a-z]\.\s)/gi, '$1\n$2') // Letter lists
+
+				// 6. PARENTHESES AND BRACKETS
+				// Often contain supplementary info that should be separated
+				.replace(/([^\s])\s*(\([^)]+\))/g, '$1\n$2')
+				.replace(/([^\s])\s*(\[[^\]]+\])/g, '$1\n$2')
+
+				// 7. CONTACT INFORMATION PATTERNS (universal)
+				// Email addresses (any domain)
+				.replace(/(\S+@\S+\.\S+)/g, '\n$1')
+				// URLs and websites (any format)
+				.replace(/((?:https?:\/\/|www\.)\S+)/g, '\n$1')
+				// Phone number patterns (international)
+				.replace(/(\+?\d{1,4}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9})/g, '\n$1')
+
+				// 8. ADDRESS AND LOCATION PATTERNS
+				// Postal/ZIP codes (various international formats)
+				.replace(/(\b\d{3,5}[-\s]?\d{0,4}\b)/g, ' $1') // Keep postal codes with context
+				// Common address indicators
+				.replace(/(Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd)\s/gi, '$1\n')
+
+				// 9. DATE AND TIME PATTERNS
+				// Various date formats
+				.replace(/(\d{1,2}[-\/\.]\d{1,2}[-\/\.]\d{2,4})/g, '\n$1')
+				.replace(/(\d{4}[-\/\.]\d{1,2}[-\/\.]\d{1,2})/g, '\n$1')
+				// Time patterns
+				.replace(/(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[APap][Mm])?)/g, '\n$1')
+
+				// 10. CURRENCY AND FINANCIAL (universal)
+				// Any currency symbol followed by numbers
+				.replace(/([\$€£¥₹₽¢₩₪₫₦₨₱₡₴₼][\d,]+\.?\d*)/g, '\n$1')
+				// Percentage values
+				.replace(/(\d+\.?\d*%)/g, ' $1')
+
+				// 11. WORD BOUNDARY FIXES
+				// Fix common PDF parsing artifacts where words run together
+				.replace(/([a-z])([A-Z])/g, '$1 $2') // camelCase
+				.replace(/(\d)([A-Za-z])/g, '$1 $2') // number+letter
+				.replace(/([A-Za-z])(\d)/g, '$1 $2') // letter+number
+				.replace(/([.,;])([A-Za-z])/g, '$1 $2') // punctuation+letter
+
+				// 12. STRUCTURAL CLEANUP
+				// Consolidate excessive whitespace while preserving intentional breaks
+				.replace(/\n{4,}/g, '\n\n\n') // Max 3 consecutive line breaks
+				.replace(/[ \t]+/g, ' ') // Consolidate spaces and tabs
+				.replace(/^\s+|\s+$/gm, '') // Trim each line
+				.replace(/\n\s*\n\s*\n/g, '\n\n') // Clean up spaced empty lines
+				.trim();
+
 		case 'minimal':
 			// Remove extra spaces but preserve all line breaks
 			return text
 				.replace(/\r\n/g, '\n')
 				.replace(/[ \t]+/g, ' ')
 				.replace(/^\s+|\s+$/gm, '');
-		
-		case 'structured':
-			// Clean formatting while preserving document structure
-			return text
-				.replace(/\r\n/g, '\n')
-				.replace(/[ \t]+/g, ' ')
-				.replace(/\n{3,}/g, '\n\n')
-				.replace(/^\s+|\s+$/gm, '')
-				.trim();
-		
+
 		case 'compact':
 			// Remove most whitespace for compact text
 			return text
 				.replace(/\s+/g, ' ')
 				.replace(/\n\s*\n/g, '\n')
 				.trim();
-		
+
 		default:
 			return text;
 	}
@@ -66,7 +169,7 @@ export class PdfParse implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'PDF Parse',
 		name: 'pdfParse',
-		icon: 'file:pdf.svg',
+		icon: 'file:icon.svg',
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["source"]}}',
@@ -202,6 +305,11 @@ export class PdfParse implements INodeType {
 								description: 'Remove extra spaces but keep line breaks',
 							},
 							{
+								name: 'Visual Layout',
+								value: 'visual',
+								description: 'Universal layout preservation - replicates human text selection patterns for any content',
+							},
+							{
 								name: 'Structured',
 								value: 'structured',
 								description: 'Clean formatting while preserving document structure',
@@ -261,7 +369,7 @@ export class PdfParse implements INodeType {
 					pdfBuffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
 				} else if (source === 'url') {
 					const url = this.getNodeParameter('url', i) as string;
-					
+
 					if (!url) {
 						throw new NodeOperationError(this.getNode(), 'URL is required when source is set to URL', {
 							itemIndex: i,
@@ -321,7 +429,7 @@ export class PdfParse implements INodeType {
 				if (additionalOptions.pageRangeStart || additionalOptions.pageRangeEnd) {
 					const start = (additionalOptions.pageRangeStart as number) || 1;
 					const end = additionalOptions.pageRangeEnd as number;
-					
+
 					parseOptions.pagerender = (pageData: any) => {
 						const pageNum = pageData.pageIndex + 1;
 						if (pageNum < start) return null;
@@ -334,7 +442,7 @@ export class PdfParse implements INodeType {
 				if (additionalOptions.maxPages && (additionalOptions.maxPages as number) > 0) {
 					const maxPages = additionalOptions.maxPages as number;
 					let pageCount = 0;
-					
+
 					parseOptions.pagerender = (pageData: any) => {
 						pageCount++;
 						if (pageCount > maxPages) return null;

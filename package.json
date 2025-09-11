@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-pdf-parse",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "N8N community node for parsing PDF files to text with advanced configuration options",
   "keywords": [
     "n8n-community-node-package",
