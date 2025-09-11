@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-09-11
+
+### 🖼️ **PDF to Image Conversion**
+- **New Convert Operation**: Added "Convert to Image" operation alongside existing text parsing
+- **Format Support**: Choose between PNG (with transparency) or JPEG (smaller file size) output
+- **Adjustable Resolution**: Configurable DPI from 72 to 600 for quality vs file size optimization
+- **Custom Dimensions**: Set custom width and height with aspect ratio preservation option
+- **Page Range Support**: Convert specific pages, page ranges, or limit maximum pages
+- **Binary Output**: Images returned as N8N binary data with proper MIME types and filenames
+
+### 🎛️ **Advanced Image Options**
+- **DPI Control**: 72-600 DPI range for quality/size balance (default: 150 DPI)
+- **Dimension Control**: Custom width/height with automatic aspect ratio preservation
+- **Multi-Page Handling**: Bulk conversion with individual page metadata (dimensions, file size)
+- **Smart Naming**: Automatic filename generation with page numbers and correct extensions
+- **Memory Efficient**: Direct base64 processing without temporary file storage
+
+### 🔧 **Technical Enhancements**
+- **Dual Operation Support**: Seamless switching between text parsing and image conversion
+- **Enhanced Error Handling**: Specific error messages for conversion failures
+- **Type Safety**: Full TypeScript support for image conversion parameters
+- **Performance Optimized**: Efficient bulk conversion with configurable page limits
+
 ## [1.2.0] - 2025-09-11
 
 ### 🧠 **Revolutionary Whitespace-Intelligent Parser**

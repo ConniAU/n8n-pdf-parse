@@ -5,13 +5,15 @@ A robust N8N community node for parsing PDF files and extracting text content wi
 ## Features
 
 - 🤖 **AI-Optimized Text Extraction**: Enhanced pdf-parse engine with superior AI-friendly formatting
+- 🖼️ **PDF to Image Conversion**: Convert PDF pages to PNG/JPEG with configurable quality and dimensions
 - ✅ **Raw Mode (Default)**: Preserves all line breaks and document structure for optimal AI processing
-- ✅ **Multiple Formatting Options**: Raw, Smart, Minimal, Structured, and Compact modes
+- ✅ **Multiple Formatting Options**: Raw, Smart, Minimal, Structured, Visual, and Compact modes
 - ✅ **Perfect for Document Analysis**: Purchase orders, invoices, forms, and tables maintain layout
 - ✅ **Enhanced Line Break Preservation**: Keeps document structure intact for LLM processing
+- ✅ **Dual Operations**: Text parsing and image conversion in one node
 - ✅ **Multiple Input Sources**: Binary data and URL sources
-- ✅ **Advanced Parsing Options**: Page ranges, max pages, metadata extraction
-- ✅ **Comprehensive Statistics**: Text length, word count, page information
+- ✅ **Advanced Options**: Page ranges, DPI control, custom dimensions, format selection
+- ✅ **Comprehensive Output**: Text, images, metadata, and statistics
 - ✅ **Robust Error Handling**: Detailed validation and graceful failure handling
 - ✅ **TypeScript**: Full type safety and IntelliSense support
 
@@ -72,7 +74,7 @@ N8N_NODES_EXCLUDE=[]
 
 #### Required Parameters
 
-- **Operation**: Currently supports "Parse PDF"
+- **Operation**: Choose between "Parse PDF" or "Convert to Image"
 - **PDF Source**: Choose between "Binary Data" or "URL"
 - **Binary Property**: Name of the binary property containing the PDF (when using binary data)
 - **URL**: URL of the PDF file to parse (when using URL source)

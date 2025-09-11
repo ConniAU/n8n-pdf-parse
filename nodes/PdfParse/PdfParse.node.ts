@@ -18,6 +18,7 @@ import {
 } from 'n8n-workflow';
 
 import pdfParse from 'pdf-parse';
+import { fromBuffer } from 'pdf2pic';
 
 // Helper function for text formatting with improved layout detection
 function formatText(text: string, formatting: string): string {
@@ -186,6 +187,12 @@ export class PdfParse implements INodeType {
 						description: 'Extract text content from PDF file',
 						action: 'Parse a PDF file',
 					},
+					{
+						name: 'Convert to Image',
+						value: 'convert',
+						description: 'Convert PDF pages to image files (JPG/PNG)',
+						action: 'Convert PDF to images',
+					},
 				],
 				default: 'parse',
 			},
@@ -238,8 +245,8 @@ export class PdfParse implements INodeType {
 				displayName: 'Output Property Name',
 				name: 'outputProperty',
 				type: 'string',
-				default: 'text',
-				description: 'Property name to store the extracted text',
+				default: 'result',
+				description: 'Property name to store the extracted content (text for parsing, image info for conversion)',
 			},
 			{
 				displayName: 'Additional Options',
@@ -337,6 +344,93 @@ export class PdfParse implements INodeType {
 						type: 'string',
 						default: 'v1.10.100',
 						description: 'PDF.js version to use for parsing',
+						displayOptions: {
+							show: {
+								'/operation': ['parse'],
+							},
+						},
+					},
+					{
+						displayName: 'Image Format',
+						name: 'imageFormat',
+						type: 'options',
+						options: [
+							{
+								name: 'PNG',
+								value: 'png',
+								description: 'PNG format with transparency support',
+							},
+							{
+								name: 'JPEG',
+								value: 'jpeg',
+								description: 'JPEG format for smaller file sizes',
+							},
+						],
+						default: 'png',
+						description: 'Output image format',
+						displayOptions: {
+							show: {
+								'/operation': ['convert'],
+							},
+						},
+					},
+					{
+						displayName: 'DPI (Resolution)',
+						name: 'dpi',
+						type: 'number',
+						default: 150,
+						description: 'Dots per inch - higher values produce better quality but larger files',
+						typeOptions: {
+							minValue: 72,
+							maxValue: 600,
+						},
+						displayOptions: {
+							show: {
+								'/operation': ['convert'],
+							},
+						},
+					},
+					{
+						displayName: 'Width',
+						name: 'width',
+						type: 'number',
+						default: 0,
+						description: 'Image width in pixels (0 = auto based on DPI)',
+						typeOptions: {
+							minValue: 0,
+						},
+						displayOptions: {
+							show: {
+								'/operation': ['convert'],
+							},
+						},
+					},
+					{
+						displayName: 'Height', 
+						name: 'height',
+						type: 'number',
+						default: 0,
+						description: 'Image height in pixels (0 = auto based on DPI)',
+						typeOptions: {
+							minValue: 0,
+						},
+						displayOptions: {
+							show: {
+								'/operation': ['convert'],
+							},
+						},
+					},
+					{
+						displayName: 'Preserve Aspect Ratio',
+						name: 'preserveAspectRatio',
+						type: 'boolean',
+						default: true,
+						description: 'Maintain original width/height ratio when resizing',
+						displayOptions: {
+							show: {
+								'/operation': ['convert'],
+							},
+						},
 					},
 				],
 			},
@@ -414,6 +508,115 @@ export class PdfParse implements INodeType {
 					});
 				}
 
+				// Handle different operations
+				if (operation === 'convert') {
+					// Image conversion operation
+					const imageFormat = (additionalOptions.imageFormat as string) || 'png';
+					const dpi = (additionalOptions.dpi as number) || 150;
+					const width = additionalOptions.width as number;
+					const height = additionalOptions.height as number;
+					const preserveAspectRatio = additionalOptions.preserveAspectRatio !== false;
+
+					// Configure pdf2pic options
+					const convertOptions: any = {
+						density: dpi,
+						saveFilename: 'page',
+						savePath: '/tmp',
+						format: imageFormat,
+						width: width > 0 ? width : undefined,
+						height: height > 0 ? height : undefined,
+					};
+
+					// Handle page range for image conversion
+					const pageRangeStart = (additionalOptions.pageRangeStart as number) || 1;
+					const pageRangeEnd = additionalOptions.pageRangeEnd as number;
+					const maxPages = additionalOptions.maxPages as number;
+
+					// Create converter instance
+					const convert = fromBuffer(pdfBuffer, convertOptions);
+
+					try {
+						let convertResult;
+						
+						if (!convert || !convert.bulk) {
+							throw new Error('PDF to image converter initialization failed');
+						}
+						
+						if (pageRangeEnd) {
+							// Convert specific page range - bulk convert then slice
+							const allPages = await convert.bulk(-1, true); // base64 = true
+							convertResult = allPages.slice(pageRangeStart - 1, pageRangeEnd);
+						} else if (maxPages && maxPages > 0) {
+							// Convert up to max pages
+							const allPages = await convert.bulk(-1, true); // base64 = true
+							convertResult = allPages.slice(pageRangeStart - 1, pageRangeStart - 1 + maxPages);
+						} else {
+							// Convert all pages starting from pageRangeStart
+							convertResult = await convert.bulk(-1, true); // base64 = true
+							if (pageRangeStart > 1) {
+								convertResult = convertResult.slice(pageRangeStart - 1);
+							}
+						}
+
+						// Prepare output data for images
+						const outputData: IDataObject = {
+							...items[i].json,
+						};
+
+						// Handle multiple pages (convert.bulk always returns array)
+						if (Array.isArray(convertResult)) {
+							const images: IBinaryKeyData = {};
+							const imageInfo: any[] = [];
+
+							for (let pageIndex = 0; pageIndex < convertResult.length; pageIndex++) {
+								const page = convertResult[pageIndex];
+								const pageNum = pageRangeStart + pageIndex;
+								
+								// Check if page has base64 data
+								if (!(page as any).base64) {
+									throw new Error(`Page ${pageNum} conversion failed - no image data`);
+								}
+								
+								const imageBuffer = Buffer.from((page as any).base64, 'base64');
+								
+								// Store as binary data
+								const binaryPropertyName = `image_page_${pageNum}`;
+								images[binaryPropertyName] = {
+									data: imageBuffer.toString('base64'),
+									mimeType: imageFormat === 'png' ? 'image/png' : 'image/jpeg',
+									fileName: `page_${pageNum}.${imageFormat}`,
+									fileExtension: imageFormat,
+								};
+
+								imageInfo.push({
+									page: pageNum,
+									width: (page as any).width || 0,
+									height: (page as any).height || 0,
+									size: imageBuffer.length,
+									format: imageFormat,
+									binaryProperty: binaryPropertyName,
+								});
+							}
+
+							outputData[outputProperty] = imageInfo;
+							
+							returnData.push({
+								json: outputData,
+								binary: images,
+							});
+						}
+
+					} catch (conversionError) {
+						throw new NodeOperationError(this.getNode(), 
+							`Image conversion failed: ${conversionError instanceof Error ? conversionError.message : String(conversionError)}`, {
+							itemIndex: i,
+						});
+					}
+
+					continue; // Skip to next item
+				}
+
+				// Text parsing operation (original logic)
 				// Prepare pdf-parse options
 				const parseOptions: any = {
 					version: additionalOptions.version || 'v1.10.100',
