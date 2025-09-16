@@ -42,8 +42,6 @@ USER node
 Create a `docker-compose.yml` file:
 
 ```yaml
-version: '3.8'
-
 services:
   n8n:
     build: .
