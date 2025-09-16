@@ -5,6 +5,72 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2025-09-11
+
+### 🚀 **Major PDF to Image Conversion Upgrade**
+- **NEW**: Added pdf2pic library as alternative to PDF.js for image conversion
+- **BREAKING**: PDF to image conversion now uses pdf2pic instead of PDF.js (resolves worker version issues)
+- **Enhanced**: More reliable image conversion without worker dependencies
+- **Improved**: Better compatibility with Node.js environments
+- **Note**: Requires GraphicsMagick and Ghostscript in production environment
+
+### 🔧 **Technical Changes**
+- **Added**: pdf2pic dependency for robust image conversion
+- **Maintained**: PDF.js still used for text parsing operations
+- **Fixed**: Worker version mismatch issues eliminated for image operations
+
+## [1.5.3] - 2025-09-11
+
+### 🔧 **PDF to Image Conversion Patches**
+- **Fixed**: Worker configuration with proper path resolution
+- **Verified**: Buffer to Uint8Array conversion working correctly
+- **Confirmed**: PDF.js compatibility with no API/Worker version mismatch
+- **Tested**: All critical patches are properly implemented and functional
+
+## [1.5.2] - 2025-09-11
+
+### 📦 **Dependencies Update**
+- **Updated**: Reinstalled dependencies with stable pdfjs-dist 4.0.379
+- **Verified**: All package versions synchronized and compatible
+- **Tested**: Worker configuration functioning correctly
+
+## [1.5.1] - 2025-09-11
+
+### 🔧 **PDF.js Worker Version Fix**
+- **Fixed**: API/Worker version mismatch error 
+- **Stabilized**: Reverted to pdfjs-dist 4.0.379 for better Node.js compatibility
+- **Enhanced**: Robust worker configuration with fallback for Node.js environments
+- **Improved**: Better error handling for worker initialization
+- **Maintained**: Buffer to Uint8Array conversion fix from previous version
+
+## [1.5.0] - 2025-09-11
+
+### 🚀 **Major PDF.js Upgrade**
+- **BREAKING**: Upgraded `pdfjs-dist` from `3.11.174` to `5.4.149` (latest version)
+- **BREAKING**: Now requires Node.js >=20.16.0 || >=22.3.0 (compatible with n8n Docker environment)
+- **Fixed**: Buffer to Uint8Array conversion for PDF.js compatibility
+- **Fixed**: Updated renderContext API to include required `canvas` property
+- **Enhanced**: Latest PDF.js features, security fixes, and performance improvements
+- **Enhanced**: Better PDF parsing capabilities and format support
+
+### 🔧 **API Changes**
+- **Import Path**: Updated to use `pdfjs-dist/legacy/build/pdf.mjs` for ESM compatibility
+- **Render Context**: Added `canvas` property to renderContext for PDF.js 5.x compatibility
+
+## [1.4.2] - 2025-09-11
+
+### 🔧 **Module Loading Compatibility Fix**
+- **Fixed PDF.js Import**: Updated to use legacy build path for maximum N8N compatibility
+- **Stable Module Resolution**: Uses `pdfjs-dist/legacy/build/pdf.js` for reliable loading
+- **Production Tested**: Confirmed working installation in N8N environments
+- **Zero Installation Issues**: Eliminates all module loading errors
+
+### 📋 **Technical Details**
+- **Import Path**: Uses `import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.js'`
+- **Legacy Build**: Leverages PDF.js legacy build for Node.js compatibility
+- **Render Context**: Updated render parameters for proper canvas integration
+- **VirtualCanvas**: Maintains zero native dependencies with pure JavaScript rendering
+
 ## [1.3.2] - 2025-09-11
 
 ### 🎯 **Zero Native Dependencies - Production Ready**

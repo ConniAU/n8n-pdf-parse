@@ -18,7 +18,10 @@ import {
 } from 'n8n-workflow';
 
 import pdfParse from 'pdf-parse';
-import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.js';
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+
+// Import pdf2pic for reliable image conversion without worker issues
+const { fromBuffer } = require('pdf2pic');
 
 // Define ImageData interface for Node.js environment
 interface ImageData {
@@ -684,12 +687,11 @@ export class PdfParse implements INodeType {
 
 				// Handle different operations
 				if (operation === 'convert') {
-					// Image conversion operation using PDF.js + Canvas
+					// Image conversion operation using pdf2pic (reliable, no worker issues)
 					const imageFormat = (additionalOptions.imageFormat as string) || 'png';
 					const dpi = (additionalOptions.dpi as number) || 150;
 					const width = additionalOptions.width as number;
 					const height = additionalOptions.height as number;
-					const preserveAspectRatio = additionalOptions.preserveAspectRatio !== false;
 
 					// Handle page range for image conversion
 					const pageRangeStart = (additionalOptions.pageRangeStart as number) || 1;
@@ -697,20 +699,34 @@ export class PdfParse implements INodeType {
 					const maxPages = additionalOptions.maxPages as number;
 
 					try {
-						// Load PDF with PDF.js
-						const loadingTask = pdfjs.getDocument({ data: pdfBuffer });
-						const pdf = await loadingTask.promise;
+						// Configure pdf2pic options
+						const convert = fromBuffer(pdfBuffer, {
+							density: dpi,
+							saveFilename: 'page',
+							savePath: './',
+							format: imageFormat === 'jpeg' ? 'jpg' : imageFormat,
+							width: width || undefined,
+							height: height || undefined,
+							quality: imageFormat === 'jpeg' ? 90 : undefined,
+						});
 
-						// Determine which pages to convert
-						const totalPages = pdf.numPages;
-						let startPage = pageRangeStart;
-						let endPage = pageRangeEnd || totalPages;
+						// Determine which pages to convert with pdf2pic
+						let pagesToConvert: number[] = [];
 						
-						if (maxPages && maxPages > 0) {
-							endPage = Math.min(startPage + maxPages - 1, totalPages);
+						if (pageRangeStart && pageRangeEnd) {
+							// Specific range
+							for (let p = pageRangeStart; p <= pageRangeEnd; p++) {
+								pagesToConvert.push(p);
+							}
+						} else if (maxPages && maxPages > 0) {
+							// Max pages from start
+							for (let p = 1; p <= maxPages; p++) {
+								pagesToConvert.push(p);
+							}
+						} else {
+							// Convert all pages (pdf2pic will determine total)
+							pagesToConvert = [-1]; // Special marker for all pages
 						}
-						
-						endPage = Math.min(endPage, totalPages);
 
 						// Prepare output data for images
 						const outputData: IDataObject = {
@@ -720,86 +736,68 @@ export class PdfParse implements INodeType {
 						const images: IBinaryKeyData = {};
 						const imageInfo: any[] = [];
 
-						// Convert each page
-						for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
-							const page = await pdf.getPage(pageNum);
-							const viewport = page.getViewport({ scale: dpi / 72 }); // Scale based on DPI
+						if (pagesToConvert[0] === -1) {
+							// Convert all pages using pdf2pic bulk conversion
+							const result = await convert.bulk(-1, { responseType: 'buffer' });
+							
+							for (let idx = 0; idx < result.length; idx++) {
+								const pageResult = result[idx];
+								const pageNum = idx + 1;
+								
+								if (pageResult.buffer) {
+									// Store as binary data
+									const binaryPropertyName = `image_page_${pageNum}`;
+									const fileExtension = imageFormat === 'jpeg' ? 'jpg' : imageFormat;
+									
+									images[binaryPropertyName] = {
+										data: pageResult.buffer.toString('base64'),
+										mimeType: imageFormat === 'jpeg' ? 'image/jpeg' : `image/${imageFormat}`,
+										fileName: `page_${pageNum}.${fileExtension}`,
+										fileExtension: fileExtension,
+									};
 
-							// Calculate dimensions
-							let canvasWidth = Math.floor(viewport.width);
-							let canvasHeight = Math.floor(viewport.height);
-
-							// Apply custom dimensions if specified
-							if (width > 0 || height > 0) {
-								if (width > 0 && height > 0) {
-									if (preserveAspectRatio) {
-										const aspectRatio = viewport.width / viewport.height;
-										if (width / height > aspectRatio) {
-											canvasWidth = Math.floor(height * aspectRatio);
-											canvasHeight = height;
-										} else {
-											canvasWidth = width;
-											canvasHeight = Math.floor(width / aspectRatio);
-										}
-									} else {
-										canvasWidth = width;
-										canvasHeight = height;
-									}
-								} else if (width > 0) {
-									const aspectRatio = viewport.width / viewport.height;
-									canvasWidth = width;
-									canvasHeight = Math.floor(width / aspectRatio);
-								} else if (height > 0) {
-									const aspectRatio = viewport.width / viewport.height;
-									canvasWidth = Math.floor(height * aspectRatio);
-									canvasHeight = height;
+									imageInfo.push({
+										page: pageNum,
+										width: pageResult.width || width || 0,
+										height: pageResult.height || height || 0,
+										size: pageResult.buffer.length,
+										format: imageFormat,
+										binaryProperty: binaryPropertyName,
+									});
 								}
 							}
+						} else {
+							// Convert specific pages using pdf2pic individual conversion
+							for (const pageNum of pagesToConvert) {
+								try {
+									const pageResult = await convert(pageNum, { responseType: 'buffer' });
+									
+									if (pageResult.buffer) {
+										// Store as binary data
+										const binaryPropertyName = `image_page_${pageNum}`;
+										const fileExtension = imageFormat === 'jpeg' ? 'jpg' : imageFormat;
+										
+										images[binaryPropertyName] = {
+											data: pageResult.buffer.toString('base64'),
+											mimeType: imageFormat === 'jpeg' ? 'image/jpeg' : `image/${imageFormat}`,
+											fileName: `page_${pageNum}.${fileExtension}`,
+											fileExtension: fileExtension,
+										};
 
-							// Create virtual canvas
-							const canvas = new VirtualCanvas(canvasWidth, canvasHeight);
-							const context = canvas.getContext('2d');
-
-							if (!context) {
-								throw new Error('Failed to create canvas context');
+										imageInfo.push({
+											page: pageNum,
+											width: pageResult.width || width || 0,
+											height: pageResult.height || height || 0,
+											size: pageResult.buffer.length,
+											format: imageFormat,
+											binaryProperty: binaryPropertyName,
+										});
+									}
+								} catch (pageError) {
+									// Skip pages that fail to convert
+									console.warn(`Failed to convert page ${pageNum}:`, pageError);
+								}
 							}
-
-							// Set white background for JPEG
-							if (imageFormat === 'jpeg') {
-								context.fillStyle = '#FFFFFF';
-								context.fillRect(0, 0, canvasWidth, canvasHeight);
-							}
-
-							// Render PDF page to virtual canvas
-							const renderContext = {
-								canvasContext: context,
-								viewport: page.getViewport({ scale: canvasWidth / viewport.width }),
-							};
-
-							await page.render(renderContext).promise;
-
-							// Convert canvas to image buffer
-							const imageBuffer = imageFormat === 'png' 
-								? canvas.toBuffer('image/png')
-								: canvas.toBuffer('image/jpeg', { quality: 0.9 });
-
-							// Store as binary data
-							const binaryPropertyName = `image_page_${pageNum}`;
-							images[binaryPropertyName] = {
-								data: imageBuffer.toString('base64'),
-								mimeType: imageFormat === 'png' ? 'image/png' : 'image/jpeg',
-								fileName: `page_${pageNum}.${imageFormat}`,
-								fileExtension: imageFormat,
-							};
-
-							imageInfo.push({
-								page: pageNum,
-								width: canvasWidth,
-								height: canvasHeight,
-								size: imageBuffer.length,
-								format: imageFormat,
-								binaryProperty: binaryPropertyName,
-							});
 						}
 
 						outputData[outputProperty] = imageInfo;
@@ -810,10 +808,31 @@ export class PdfParse implements INodeType {
 						});
 
 					} catch (conversionError) {
-						throw new NodeOperationError(this.getNode(), 
-							`Image conversion failed: ${conversionError instanceof Error ? conversionError.message : String(conversionError)}`, {
-							itemIndex: i,
-						});
+						const errorMessage = conversionError instanceof Error ? conversionError.message : String(conversionError);
+						
+						// Check for missing system dependencies
+						if (errorMessage.includes('execvp failed') || errorMessage.includes('"gs"') || errorMessage.includes('Postscript delegate failed')) {
+							throw new NodeOperationError(this.getNode(), 
+								`PDF to Image conversion failed: Missing system dependencies. Please install GraphicsMagick and Ghostscript in your n8n environment:\n\n` +
+								`For Docker/Ubuntu: RUN apt-get update && apt-get install -y graphicsmagick ghostscript\n` +
+								`For Alpine: RUN apk add graphicsmagick ghostscript\n\n` +
+								`Original error: ${errorMessage}`, {
+								itemIndex: i,
+							});
+						} else if (errorMessage.includes('gm identify') || errorMessage.includes('GraphicsMagick')) {
+							throw new NodeOperationError(this.getNode(), 
+								`PDF to Image conversion failed: GraphicsMagick not found. Please install it in your n8n environment:\n\n` +
+								`For Docker/Ubuntu: RUN apt-get update && apt-get install -y graphicsmagick\n` +
+								`For Alpine: RUN apk add graphicsmagick\n\n` +
+								`Original error: ${errorMessage}`, {
+								itemIndex: i,
+							});
+						} else {
+							throw new NodeOperationError(this.getNode(), 
+								`Image conversion failed: ${errorMessage}`, {
+								itemIndex: i,
+							});
+						}
 					}
 
 					continue; // Skip to next item

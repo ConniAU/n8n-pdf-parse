@@ -5,7 +5,7 @@ A robust N8N community node for parsing PDF files and extracting text content wi
 ## Features
 
 - 🤖 **AI-Optimized Text Extraction**: Enhanced pdf-parse engine with superior AI-friendly formatting
-- 🖼️ **PDF to Image Conversion**: Zero native dependencies - pure JavaScript PDF to PNG/JPEG conversion
+- 🖼️ **PDF to Image Conversion**: High-quality PDF to PNG/JPEG conversion using pdf2pic with GraphicsMagick backend
 - ✅ **Raw Mode (Default)**: Preserves all line breaks and document structure for optimal AI processing
 - ✅ **Multiple Formatting Options**: Raw, Smart, Minimal, Structured, Visual, and Compact modes
 - ✅ **Perfect for Document Analysis**: Purchase orders, invoices, forms, and tables maintain layout
@@ -19,13 +19,157 @@ A robust N8N community node for parsing PDF files and extracting text content wi
 
 ## Installation
 
-### Option 1: Install via npm (Recommended)
+### System Requirements
+
+For **PDF to Image conversion** operations, the following system dependencies are required:
+
+#### Docker Environment (N8N Docker)
+
+##### Option 1: Using docker-compose with custom Dockerfile (Recommended)
+
+Create a `Dockerfile` in your project directory:
+
+```dockerfile
+FROM n8nio/n8n:latest
+USER root
+# Alpine-based image uses apk package manager
+RUN apk update && apk add --no-cache \
+    graphicsmagick \
+    ghostscript
+USER node
+```
+
+Create a `docker-compose.yml` file:
+
+```yaml
+version: '3.8'
+
+services:
+  n8n:
+    build: .
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=America/New_York
+      # Allow community nodes
+      - NODE_FUNCTION_ALLOW_EXTERNAL=n8n-nodes-pdf-parse
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./custom-nodes:/home/node/.n8n/nodes
+    networks:
+      - n8n-network
+
+volumes:
+  n8n_data:
+
+networks:
+  n8n-network:
+    driver: bridge
+```
+
+Then run:
+```bash
+docker-compose up -d
+```
+
+##### Option 2: Quick installation in running container (Temporary)
+
+If you're already running n8n in Docker and need a quick fix:
+
+```bash
+# Access the container (replace 'n8n' with your container name)
+docker exec -it --user root n8n /bin/sh
+
+# Install dependencies
+apk update && apk add --no-cache graphicsmagick ghostscript
+
+# Exit container
+exit
+```
+
+**Note:** This method is temporary - packages will be lost when the container restarts. Use Option 1 for a permanent solution.
+
+#### Ubuntu/Debian
+```bash
+sudo apt-get update
+sudo apt-get install graphicsmagick ghostscript
+```
+
+#### CentOS/RHEL/Fedora
+```bash
+sudo yum install GraphicsMagick ghostscript
+# or for newer versions:
+sudo dnf install GraphicsMagick ghostscript
+```
+
+#### macOS
+```bash
+brew install graphicsmagick ghostscript
+```
+
+#### Windows
+Download and install:
+- [GraphicsMagick](http://www.graphicsmagick.org/download.html)
+- [Ghostscript](https://www.ghostscript.com/download/gsdnld.html)
+
+### Node Installation for Self-Hosted n8n
+
+#### For Docker-Based n8n (Most Common)
+
+If you're running n8n with Docker, you need to install the node inside the container. Add this to your docker-compose.yml:
+
+```yaml
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=America/New_York
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./custom-nodes:/home/node/.n8n/nodes
+    command: >
+      /bin/sh -c "
+        npm install -g n8n-nodes-pdf-parse &&
+        n8n start
+      "
+    networks:
+      - n8n-network
+
+volumes:
+  n8n_data:
+
+networks:
+  n8n-network:
+    driver: bridge
+```
+
+**Note:** For PDF to Image conversion to work, you'll also need GraphicsMagick and Ghostscript. See the "System Requirements" section above for Docker setup with these dependencies.
+
+#### Option 1: Install via npm (For Non-Docker Installations)
 
 ```bash
 npm install n8n-nodes-pdf-parse
 ```
 
-### Option 2: Manual Installation
+#### Option 2: Manual Installation
 
 1. Navigate to your N8N installation directory
 2. Go to the `~/.n8n/custom` directory (create if it doesn't exist)
@@ -38,7 +182,7 @@ npm install
 npm run build
 ```
 
-### Option 3: Global Installation
+#### Option 3: Global Installation
 
 ```bash
 npm install -g n8n-nodes-pdf-parse
@@ -278,11 +422,17 @@ When "Continue on Fail" is enabled, errors are added to the output data:
 
 ## Dependencies
 
+### Node.js Dependencies
 - `pdf-parse`: Enhanced PDF parsing library with AI-optimized text extraction
-- `pdfjs-dist`: Mozilla's PDF.js library for reliable PDF processing and image generation
+- `pdfjs-dist`: Mozilla's PDF.js library for reliable PDF text parsing
+- `pdf2pic`: Robust PDF to image conversion library
 - `n8n-workflow`: N8N workflow types and utilities
 
-**Zero Native Dependencies**: Unlike other PDF processing libraries, this node is 100% pure JavaScript with no native modules, binary compilation, or external system dependencies. Works instantly on all platforms without Canvas native modules, GraphicsMagick, ImageMagick, or Ghostscript.
+### System Dependencies (Image Conversion Only)
+- **GraphicsMagick**: High-performance image processing library
+- **Ghostscript**: PostScript and PDF interpreter (required by GraphicsMagick for PDF handling)
+
+**Note**: Text parsing operations require no system dependencies - only Node.js packages. Image conversion operations require GraphicsMagick and Ghostscript to be installed on the system.
 
 ## Development
 
@@ -321,6 +471,154 @@ npm test
 4. Push to the branch: `git push origin feature/new-feature`
 5. Submit a pull request
 
+## Complete Docker Setup Example
+
+For self-hosted n8n users who want both the PDF Parse node AND image conversion capabilities, here's a complete setup:
+
+### Step 1: Create a Dockerfile
+
+```dockerfile
+FROM n8nio/n8n:latest
+
+USER root
+
+# Install system dependencies for PDF to Image conversion
+RUN apk update && apk add --no-cache \
+    graphicsmagick \
+    ghostscript \
+    nodejs \
+    npm
+
+# Install the PDF Parse node globally
+RUN npm install -g n8n-nodes-pdf-parse
+
+USER node
+```
+
+### Step 2: Create docker-compose.yml
+
+```yaml
+version: '3.8'
+
+services:
+  n8n:
+    build: .
+    container_name: n8n-with-pdf-parse
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # Basic n8n configuration
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
+      - NODE_ENV=production
+      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678/}
+      - GENERIC_TIMEZONE=${TIMEZONE:-America/New_York}
+      
+      # Database configuration (optional - uses SQLite by default)
+      - DB_TYPE=sqlite
+      # For PostgreSQL, uncomment and configure:
+      # - DB_TYPE=postgresdb
+      # - DB_POSTGRESDB_HOST=postgres
+      # - DB_POSTGRESDB_PORT=5432
+      # - DB_POSTGRESDB_DATABASE=${DB_POSTGRESDB_DATABASE:-n8n}
+      # - DB_POSTGRESDB_USER=${DB_POSTGRESDB_USER:-n8n}
+      # - DB_POSTGRESDB_PASSWORD=${DB_POSTGRESDB_PASSWORD:-n8n}
+      
+      # Security
+      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE:-false}
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:-}
+      
+      # Allow external npm modules (required for community nodes)
+      - NODE_FUNCTION_ALLOW_EXTERNAL=*
+      - NODE_FUNCTION_ALLOW_BUILTIN=*
+      
+    volumes:
+      # Persist n8n data
+      - n8n_data:/home/node/.n8n
+      # Optional: Mount local workflows directory
+      # - ./workflows:/home/node/.n8n/workflows
+      # Optional: Mount custom nodes directory
+      # - ./custom-nodes:/home/node/.n8n/nodes
+      
+    networks:
+      - n8n-network
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Optional: PostgreSQL database for production use
+  # postgres:
+  #   image: postgres:14-alpine
+  #   container_name: n8n-postgres
+  #   restart: unless-stopped
+  #   environment:
+  #     - POSTGRES_USER=${DB_POSTGRESDB_USER:-n8n}
+  #     - POSTGRES_PASSWORD=${DB_POSTGRESDB_PASSWORD:-n8n}
+  #     - POSTGRES_DB=${DB_POSTGRESDB_DATABASE:-n8n}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - n8n-network
+
+volumes:
+  n8n_data:
+  # postgres_data:
+
+networks:
+  n8n-network:
+    driver: bridge
+```
+
+### Step 3: Create .env file (optional)
+
+```env
+# n8n Configuration
+N8N_HOST=localhost
+N8N_PROTOCOL=http
+WEBHOOK_URL=http://localhost:5678/
+TIMEZONE=America/New_York
+
+# Authentication (uncomment to enable)
+# N8N_BASIC_AUTH_ACTIVE=true
+# N8N_BASIC_AUTH_USER=admin
+# N8N_BASIC_AUTH_PASSWORD=your-secure-password
+
+# Database (for PostgreSQL)
+# DB_POSTGRESDB_DATABASE=n8n
+# DB_POSTGRESDB_USER=n8n
+# DB_POSTGRESDB_PASSWORD=your-secure-password
+```
+
+### Step 4: Deploy
+
+```bash
+# Build and start the services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f n8n
+
+# Stop services
+docker-compose down
+
+# Stop and remove volumes (caution: deletes all data)
+docker-compose down -v
+```
+
+### Step 5: Access n8n
+
+Open your browser and navigate to `http://localhost:5678`
+
+The PDF Parse node should be available in the node selection panel under the "Transform" category.
+
 ## Troubleshooting
 
 ### Common Issues
@@ -335,11 +633,24 @@ npm test
    - Check if the PDF is corrupted
    - Try with a different PDF file
 
-3. **Memory issues with large PDFs**
+3. **Image conversion errors (Missing system dependencies)**
+   - **Error**: `Command failed: execvp failed, errno = 2 (No such file or directory) gm identify`
+   - **Cause**: GraphicsMagick not installed
+   - **Solution**: Install GraphicsMagick and Ghostscript (see System Requirements above)
+   
+   **Docker Environment**: Use custom Dockerfile with dependencies:
+   ```dockerfile
+   FROM n8nio/n8n:latest
+   USER root
+   RUN apt-get update && apt-get install -y graphicsmagick ghostscript
+   USER node
+   ```
+
+4. **Memory issues with large PDFs**
    - Use page range options to limit processing
    - Increase Node.js memory limit: `--max-old-space-size=4096`
 
-4. **Network timeout errors**
+5. **Network timeout errors**
    - Check URL accessibility
    - Verify network connectivity
    - Consider downloading the file first
