@@ -30,8 +30,16 @@ For **PDF to Image conversion** operations, the following system dependencies ar
 Create a `Dockerfile` in your project directory:
 
 ```dockerfile
+FROM alpine:latest AS alpine
 FROM n8nio/n8n:latest
+# Copy apk and its deps from Alpine
+
+COPY --from=alpine /sbin/apk /sbin/apk
+
+COPY --from=alpine /usr/lib/libapk.so* /usr/lib/
+
 USER root
+
 # Alpine-based image uses apk package manager
 RUN apk update && apk add --no-cache \
     graphicsmagick \
